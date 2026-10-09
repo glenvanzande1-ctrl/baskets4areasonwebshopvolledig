@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: baskets4areason
+      POSTGRES_USER: baskets
+      POSTGRES_PASSWORD: baskets
+    ports:
+      - "5432:5432"
+    volumes:
+      - baskets_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U baskets -d baskets4areason"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  baskets_pgdata:
