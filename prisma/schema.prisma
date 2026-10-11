@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -13,26 +14,173 @@ enum UserRole {
   CASHIER
 }
 
+enum InventoryMovementType {
+  RECEIPT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  DAMAGE
+  RETURN
+  POS_SALE
+  ONLINE_SALE
+  RESERVATION_CONSUMED
+}
+
+enum InventoryReservationStatus {
+  ACTIVE
+  RELEASED
+  CONSUMED
+  EXPIRED
+}
+
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  firstName    String?
-  lastName     String?
-  role         UserRole   @default(CASHIER)
-  active       Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditLogs    AuditLog[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  passwordHash       String
+  firstName          String?
+  lastName           String?
+  role               UserRole            @default(CASHIER)
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  auditLogs          AuditLog[]
+  inventoryMovements InventoryMovement[]
 }
 
 model TaxRate {
-  id         String   @id @default(cuid())
-  name       String   @unique
-  percentage Decimal  @db.Decimal(5, 2)
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         String           @id @default(cuid())
+  name       String           @unique
+  percentage Decimal          @db.Decimal(5, 2)
+  active     Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  variants   ProductVariant[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  active      Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([active, sortOrder])
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String?
+  active      Boolean          @default(true)
+  categoryId  String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  category    Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  variants    ProductVariant[]
+  images      ProductImage[]
+
+  @@index([active, name])
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id                    String                 @id @default(cuid())
+  productId             String
+  sku                   String                 @unique
+  barcode               String?                @unique
+  color                 String?
+  size                  String?
+  weightGrams           Int?
+  price                 Decimal                @db.Decimal(10, 2)
+  taxRateId             String
+  active                Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  taxRate               TaxRate                @relation(fields: [taxRateId], references: [id], onDelete: Restrict)
+  inventoryStocks       InventoryStock[]
+  inventoryMovements    InventoryMovement[]
+  inventoryReservations InventoryReservation[]
+  cartItems             CartItem[]
+
+  @@index([productId, active])
+  @@index([barcode])
+}
+
+model InventoryLocation {
+  id           String                 @id @default(cuid())
+  name         String
+  code         String                 @unique
+  active       Boolean                @default(true)
+  isDefault    Boolean                @default(false)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  stocks       InventoryStock[]
+  movements    InventoryMovement[]
+  reservations InventoryReservation[]
+
+  @@index([active, name])
+}
+
+model InventoryStock {
+  id          String            @id @default(cuid())
+  variantId   String
+  locationId  String
+  onHand      Int               @default(0)
+  reserved    Int               @default(0)
+  minStock    Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  variant     ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  location    InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, locationId])
+  @@index([locationId])
+  @@index([variantId])
+}
+
+model InventoryMovement {
+  id            String                @id @default(cuid())
+  variantId     String
+  locationId    String
+  userId        String?
+  type          InventoryMovementType
+  quantity      Int
+  stockAfter    Int
+  note          String?
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime              @default(now())
+  variant       ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  location      InventoryLocation     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  user          User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([variantId, createdAt])
+  @@index([locationId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model InventoryReservation {
+  id            String                     @id @default(cuid())
+  variantId     String
+  locationId    String
+  quantity      Int
+  status        InventoryReservationStatus @default(ACTIVE)
+  referenceType String?
+  referenceId   String?
+  expiresAt     DateTime?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  variant       ProductVariant             @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  location      InventoryLocation          @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([variantId, locationId, status])
+  @@index([referenceType, referenceId])
+  @@index([status, expiresAt])
 }
 
 model AuditLog {
@@ -48,4 +196,81 @@ model AuditLog {
 
   @@index([userId, createdAt])
   @@index([entityType, entityId])
+}
+
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  addresses    CustomerAddress[]
+  carts        Cart[]
+
+  @@index([email])
+}
+
+model CustomerAddress {
+  id         String   @id @default(cuid())
+  customerId String
+  label      String?
+  firstName  String
+  lastName   String
+  street     String
+  houseNumber String
+  box        String?
+  postalCode String
+  city       String
+  country    String   @default("BE")
+  phone      String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, isDefault])
+}
+
+model Cart {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  customerId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items      CartItem[]
+
+  @@index([customerId])
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  variantId String
+  quantity  Int            @default(1)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+  @@index([cartId])
+  @@index([variantId])
 }

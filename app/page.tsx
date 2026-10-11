@@ -1,15 +1,8 @@
-export default function Home() {
-  return (
-    <main className="shell">
-      <section className="card">
-        <div className="brand">Baskets4areason</div>
-        <h1>Platform fundament</h1>
-        <p className="muted">Fase 1 is opgezet: Next.js, TypeScript, PostgreSQL/Prisma, personeelsauthenticatie, rollen en startschermen.</p>
-        <div className="grid">
-          <a className="tile" href="/admin"><strong>Beheer</strong>Producten, voorraad en bestellingen komen hier.</a>
-          <a className="tile" href="/pos"><strong>Fysieke winkel / Kassa</strong>Aparte kassamodus voor barcodeverkoop.</a>
-        </div>
-      </section>
-    </main>
-  );
+import StoreHeader from "@/components/StoreHeader";
+import { prisma } from "@/lib/db";
+
+export default async function StoreHome() {
+  const products = await prisma.product.findMany({ where:{active:true,variants:{some:{active:true}}}, include:{category:true,images:{orderBy:{sortOrder:"asc"},take:1},variants:{where:{active:true},orderBy:{price:"asc"},take:1}}, orderBy:{createdAt:"desc"}, take:6 });
+  const categories = await prisma.category.findMany({where:{active:true},orderBy:[{sortOrder:"asc"},{name:"asc"}],take:8});
+  return <><StoreHeader/><main className="store-main"><section className="hero"><div><span className="eyebrow">Baskets4areason · Zele</span><h1>Een cadeau met een reden.</h1><p>Ontbijtmanden, tapas, pralines, decoratie en originele geschenken — eenvoudig online bestellen en afhalen of laten leveren.</p><a className="btn" href="/producten">Bekijk het aanbod</a></div></section><section><div className="section-head"><h2>Categorieën</h2><a href="/producten">Alles bekijken →</a></div><div className="category-chips">{categories.map(c=><a href={`/producten?categorie=${c.slug}`} key={c.id}>{c.name}</a>)}</div></section><section><div className="section-head"><h2>Nieuw in de shop</h2></div><div className="product-grid">{products.map(p=><a className="product-card" href={`/product/${p.slug}`} key={p.id}><div className="product-image">{p.images[0]?.url ? <img src={p.images[0].url} alt={p.images[0].altText ?? p.name}/> : <span>Foto volgt</span>}</div><div className="product-info">{p.category && <span className="eyebrow">{p.category.name}</span>}<h3>{p.name}</h3><strong>vanaf € {p.variants[0]?.price.toString().replace('.', ',')}</strong></div></a>)}</div></section></main><footer className="store-footer">© {new Date().getFullYear()} Baskets4areason · Zandberg 10, 9240 Zele</footer></>;
 }

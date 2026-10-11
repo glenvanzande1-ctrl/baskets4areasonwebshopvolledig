@@ -1,0 +1,8 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requireManager } from "@/lib/admin";
+import { toSlug } from "@/lib/slug";
+
+export async function GET(){ const session=await requireManager(); if(!session)return NextResponse.json({error:"Geen toegang"},{status:403}); const rows=await prisma.category.findMany({include:{_count:{select:{products:true}}},orderBy:[{sortOrder:"asc"},{name:"asc"}]}); return NextResponse.json(rows.map(r=>({id:r.id,name:r.name,slug:r.slug,active:r.active,productCount:r._count.products}))); }
+export async function POST(req:Request){ const session=await requireManager(); if(!session)return NextResponse.json({error:"Geen toegang"},{status:403}); const body=await req.json(); const name=String(body.name||"").trim(); if(name.length<2)return NextResponse.json({error:"Geef een categorienaam op."},{status:400}); let slug=toSlug(name); if(await prisma.category.findUnique({where:{slug}})) slug+=`-${Date.now().toString().slice(-5)}`; const c=await prisma.category.create({data:{name,slug}}); await prisma.auditLog.create({data:{userId:session.userId,action:"CATEGORY_CREATED",entityType:"Category",entityId:c.id,metadata:{name}}}); return NextResponse.json(c); }
+export async function DELETE(req:Request){ const session=await requireManager(); if(!session)return NextResponse.json({error:"Geen toegang"},{status:403}); const id=new URL(req.url).searchParams.get("id"); if(!id)return NextResponse.json({error:"ID ontbreekt"},{status:400}); await prisma.category.delete({where:{id}}); await prisma.auditLog.create({data:{userId:session.userId,action:"CATEGORY_DELETED",entityType:"Category",entityId:id}}); return NextResponse.json({ok:true}); }

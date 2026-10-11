@@ -72,3 +72,6 @@ Datamodel en beheer voor:
 - BTW 6% / 21% per variant
 - categorieën
 - productafbeeldingen
+
+## Fase 4
+De publieke webshop, klantenaccounts, winkelmand en checkoutfundament zijn toegevoegd. Zie `PHASE4.md`.

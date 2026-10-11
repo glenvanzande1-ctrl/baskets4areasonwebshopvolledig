@@ -1,0 +1,21 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { requireManager } from "@/lib/admin";
+import { toSlug } from "@/lib/slug";
+
+const variant = z.object({ sku:z.string().min(1), barcode:z.string().optional(), color:z.string().optional(), size:z.string().optional(), weightGrams:z.union([z.string(),z.number()]).optional(), price:z.union([z.string(),z.number()]), taxRateId:z.string().min(1), active:z.boolean().default(true) });
+const schema = z.object({ name:z.string().min(2), description:z.string().optional(), imageUrl:z.string().optional(), categoryId:z.string().nullable().optional(), active:z.boolean().default(true), variants:z.array(variant).min(1) });
+
+export async function POST(req: Request) {
+  const session = await requireManager(); if (!session) return NextResponse.json({ error:"Geen toegang." }, { status:403 });
+  const parsed = schema.safeParse(await req.json()); if (!parsed.success) return NextResponse.json({ error:"Controleer de productgegevens." }, { status:400 });
+  const d = parsed.data;
+  let slug = toSlug(d.name); if (!slug) slug = `product-${Date.now()}`;
+  if (await prisma.product.findUnique({ where:{ slug } })) slug += `-${Date.now().toString().slice(-5)}`;
+  try {
+    const product = await prisma.product.create({ data:{ name:d.name.trim(), slug, description:d.description?.trim() || null, categoryId:d.categoryId || null, active:d.active, images:d.imageUrl?.trim() ? { create:{ url:d.imageUrl.trim(), altText:d.name.trim(), sortOrder:0 } } : undefined, variants:{ create:d.variants.map(v => ({ sku:v.sku.trim(), barcode:v.barcode?.trim() || null, color:v.color?.trim() || null, size:v.size?.trim() || null, weightGrams:v.weightGrams ? Number(v.weightGrams) : null, price:String(v.price), taxRateId:v.taxRateId, active:v.active })) } } });
+    await prisma.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_CREATED", entityType:"Product", entityId:product.id, metadata:{ name:product.name } } });
+    return NextResponse.json({ id:product.id });
+  } catch (e:any) { return NextResponse.json({ error: e?.code === "P2002" ? "SKU of barcode bestaat al." : "Product kon niet worden opgeslagen." }, { status:400 }); }
+}

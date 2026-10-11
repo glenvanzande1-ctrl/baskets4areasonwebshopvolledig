@@ -1,19 +1,18 @@
 {
   "name": "baskets4areason-platform",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "7.10.0",
+    "@prisma/client": "6.19.0",
     "bcryptjs": "3.0.3",
     "jose": "6.1.0",
     "next": "16.4.0",
@@ -25,7 +24,7 @@
     "@types/node": "24.10.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
-    "prisma": "7.10.0",
+    "prisma": "6.19.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3"
   },
