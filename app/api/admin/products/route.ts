@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/admin";
@@ -16,6 +17,10 @@ export async function POST(req: Request) {
   try {
     const product = await prisma.product.create({ data:{ name:d.name.trim(), slug, description:d.description?.trim() || null, categoryId:d.categoryId || null, active:d.active, variants:{ create:d.variants.map(v => ({ sku:v.sku.trim(), barcode:v.barcode?.trim() || null, color:v.color?.trim() || null, size:v.size?.trim() || null, weightGrams:v.weightGrams ? Number(v.weightGrams) : null, price:String(v.price), taxRateId:v.taxRateId, active:v.active })) } } });
     await prisma.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_CREATED", entityType:"Product", entityId:product.id, metadata:{ name:product.name } } });
+    revalidatePath("/admin/products");
+    revalidatePath("/admin");
+    revalidatePath("/producten");
+    revalidatePath("/");
     return NextResponse.json({ id:product.id });
   } catch (e:any) { return NextResponse.json({ error: e?.code === "P2002" ? "SKU of barcode bestaat al." : "Product kon niet worden opgeslagen." }, { status:400 }); }
 }

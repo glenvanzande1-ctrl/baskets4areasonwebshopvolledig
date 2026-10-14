@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/admin";
@@ -25,6 +26,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id:strin
       }
       await tx.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_UPDATED", entityType:"Product", entityId:id, metadata:{ name:d.name } } });
     });
+    revalidatePath("/admin/products");
+    revalidatePath("/admin");
+    revalidatePath("/producten");
+    revalidatePath("/");
     return NextResponse.json({ ok:true });
   } catch (e:any) { return NextResponse.json({ error:e?.code === "P2002" ? "SKU of barcode bestaat al." : "Wijzigen mislukt." }, { status:400 }); }
 }
@@ -38,6 +43,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id:s
     if (paths.length) { try { const supabase=getStorageAdmin(); await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(paths); } catch {} }
     const p = await prisma.product.delete({ where:{ id } });
     await prisma.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_DELETED", entityType:"Product", entityId:id, metadata:{ name:p.name } } });
+    revalidatePath("/admin/products");
+    revalidatePath("/admin");
+    revalidatePath("/producten");
+    revalidatePath("/");
     return NextResponse.json({ ok:true });
   } catch { return NextResponse.json({ error:"Verwijderen mislukt." }, { status:400 }); }
 }
