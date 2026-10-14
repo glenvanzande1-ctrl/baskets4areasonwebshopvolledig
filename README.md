@@ -1,77 +1,32 @@
-# Baskets4areason — fase 1
+# Baskets4areason Platform — Fase 12
 
-Fundament voor webshop, beheer en kassasysteem.
+Deze versie bouwt voort op fase 11 en maakt het project klaar voor GitHub + Vercel productie.
 
-## Wat zit er nu in?
+## Upgrade vanuit fase 11
 
-- Next.js + TypeScript
-- PostgreSQL via Docker Compose
-- Prisma datalaag
-- Personeelslogin met gehashte wachtwoorden
-- HTTP-only sessiecookie met ondertekende JWT
-- Rollen: `ADMIN`, `MANAGER`, `CASHIER`
-- Routebescherming voor `/admin` en `/pos`
-- Auditlog voor login
-- BTW-tarieven 6% en 21% als seeddata
-- Apart startscherm **Fysieke winkel / Kassa**
-
-## Lokaal starten
-
-1. Kopieer `.env.example` naar `.env`.
-2. Vervang `AUTH_SECRET` door een lange willekeurige waarde.
-3. Stel een veilig `SEED_ADMIN_PASSWORD` in.
-4. Start PostgreSQL:
-
-```bash
-docker compose up -d
-```
-
-5. Installeer dependencies:
+1. Maak eerst een commit van je werkende fase 11.
+2. Kopieer fase 12 over je project en behoud je eigen `.env`.
+3. Voer lokaal uit:
 
 ```bash
 npm install
-```
-
-6. Genereer Prisma Client en maak de eerste migratie:
-
-```bash
 npx prisma generate
-npx prisma migrate dev --name init
-```
-
-7. Seed 6%/21% BTW en het eerste admin-account:
-
-```bash
-npm run db:seed
-```
-
-8. Start de applicatie:
-
-```bash
+npm run preflight
 npm run dev
 ```
 
-Open daarna `http://localhost:3000`.
+Er is **geen nieuwe database-migratie** voor fase 12.
 
-## Belangrijk voor productie
+> `npm run preflight` kan lokaal waarschuwen dat `APP_URL` nog localhost is en Mollie nog testmodus gebruikt. Dat is vóór livegang normaal.
 
-- Gebruik een beheerde PostgreSQL-database met automatische backups.
-- Gebruik HTTPS.
-- Bewaar secrets alleen in de hostingomgeving.
-- Voeg rate limiting toe vóór publieke livegang.
-- Klantenaccounts zijn bewust nog niet geïmplementeerd; die komen samen met webshop/checkout.
-- Producten, varianten en voorraad komen in fase 2 en 3.
+## Productie
 
-## Volgende stap — fase 2
+Zie `PHASE12.md` voor de volledige Vercel-, Supabase-, Prisma-, Mollie-, Resend- en domeinchecklist.
 
-Datamodel en beheer voor:
-- producten
-- varianten (maat, kleur, gramgewicht)
-- SKU en barcode per variant
-- prijs incl. BTW
-- BTW 6% / 21% per variant
-- categorieën
-- productafbeeldingen
+## Belangrijk
 
-## Fase 4
-De publieke webshop, klantenaccounts, winkelmand en checkoutfundament zijn toegevoegd. Zie `PHASE4.md`.
+- `.env` nooit naar GitHub pushen.
+- Voor Vercel runtime: Supabase Transaction pooler (`6543`) + `pgbouncer=true` en bij voorkeur `connection_limit=1` als startpunt.
+- Voor migrations: `DIRECT_URL` via Session pooler (`5432`) of directe verbinding.
+- Productiemigrations: `npm run db:migrate:deploy`.
+- Mollie pas naar `live_` na een succesvolle publieke testorder.

@@ -1,0 +1,6 @@
+import { redirect } from "next/navigation";
+import StoreHeader from "@/components/StoreHeader";
+import { getCustomerSession } from "@/lib/customer-auth";
+import { prisma } from "@/lib/db";
+const labels:Record<string,string>={PENDING_PAYMENT:"Betaling in afwachting",PAID:"Betaald",PROCESSING:"In verwerking",READY_FOR_PICKUP:"Klaar voor afhaling",SHIPPED:"Verzonden",COMPLETED:"Voltooid",PAYMENT_FAILED:"Betaling mislukt",PAYMENT_EXPIRED:"Betaling verlopen",CANCELLED:"Geannuleerd",REFUNDED:"Terugbetaald"};
+export default async function Page(){const s=await getCustomerSession();if(!s)redirect("/account/login?next=/account/bestellingen");const orders=await prisma.order.findMany({where:{customerId:s.customerId},orderBy:{createdAt:"desc"}});return <><StoreHeader/><main className="store-main narrow"><span className="eyebrow">Mijn account</span><h1>Bestellingen</h1>{!orders.length?<div className="empty-state">Je hebt nog geen bestellingen.</div>:<div className="order-list">{orders.map(o=><a className="order-row" href={`/bestelling/${o.orderNumber}`} key={o.id}><div><strong>{o.orderNumber}</strong><small>{o.createdAt.toLocaleDateString("nl-BE")} · {labels[o.status]||o.status}</small></div><strong>€ {Number(o.total).toFixed(2).replace(".",",")}</strong></a>)}</div>}</main></>}

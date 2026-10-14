@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { UserRole } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 export const SESSION_COOKIE = "b4a_session";
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -42,7 +43,13 @@ export async function getSession() {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   try {
-    return await verifySessionToken(token);
+    const decoded = await verifySessionToken(token);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, email: true, role: true, active: true },
+    });
+    if (!user?.active) return null;
+    return { userId: user.id, email: user.email, role: user.role };
   } catch {
     return null;
   }

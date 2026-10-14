@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { requireManager } from "@/lib/admin";
+const schema=z.object({code:z.string().min(2),type:z.enum(["PERCENT","FIXED"]),value:z.coerce.number().positive(),minOrderAmount:z.string().optional(),startsAt:z.string().optional(),endsAt:z.string().optional()});
+export async function POST(req:Request){const session=await requireManager();if(!session)return NextResponse.json({error:"Geen toegang."},{status:403});const p=schema.safeParse(await req.json());if(!p.success)return NextResponse.json({error:"Controleer de gegevens."},{status:400});const d=p.data;try{const row=await prisma.discountCode.create({data:{code:d.code.trim().toUpperCase(),type:d.type,value:String(d.value),minOrderAmount:d.minOrderAmount?String(Number(d.minOrderAmount)):null,startsAt:d.startsAt?new Date(d.startsAt):null,endsAt:d.endsAt?new Date(d.endsAt):null}});await prisma.auditLog.create({data:{userId:session.userId,action:"DISCOUNT_CREATED",entityType:"DiscountCode",entityId:row.id,metadata:{code:row.code}}});return NextResponse.json({ok:true})}catch(e:any){return NextResponse.json({error:e?.code==="P2002"?"Deze code bestaat al.":"Opslaan mislukt."},{status:400})}}

@@ -13,6 +13,12 @@ async function main() {
     create: { code: "WINKEL-ZELE", name: "Fysieke winkel Zele", active: true, isDefault: true },
   });
 
+  await prisma.storeSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: { id: "default", pickupEnabled: true, pickupLabel: "Afhalen in Zele", deliveryEnabled: false, deliveryFee: 5.95, deliveryTaxPercentage: 21 },
+  });
+
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (email && password) {

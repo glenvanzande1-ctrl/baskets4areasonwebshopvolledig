@@ -1,12 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ProductImageManager from "@/components/ProductImageManager";
 
 type TaxRate = { id: string; name: string; percentage: string };
 type Category = { id: string; name: string };
 type Variant = { id?: string; sku: string; barcode: string; color: string; size: string; weightGrams: string; price: string; taxRateId: string; active: boolean };
 
-type ProductInitial = { id: string; name: string; description: string | null; categoryId: string | null; active: boolean; imageUrl?: string; variants: Variant[] };
+type ProductImage = { id: string; url: string; altText: string | null; sortOrder: number };
+type ProductInitial = { id: string; name: string; description: string | null; categoryId: string | null; active: boolean; images: ProductImage[]; variants: Variant[] };
 
 export default function ProductForm({ taxRates, categories, initial }: { taxRates: TaxRate[]; categories: Category[]; initial?: ProductInitial }) {
   const router = useRouter();
@@ -24,12 +26,12 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setLoading(true); setError("");
     const form = new FormData(e.currentTarget);
-    const payload = { name: form.get("name"), description: form.get("description"), imageUrl: form.get("imageUrl"), categoryId: form.get("categoryId") || null, active: form.get("active") === "on", variants };
+    const payload = { name: form.get("name"), description: form.get("description"), categoryId: form.get("categoryId") || null, active: form.get("active") === "on", variants };
     const url = initial ? `/api/admin/products/${initial.id}` : "/api/admin/products";
     const response = await fetch(url, { method: initial ? "PUT" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) { setError(data.error ?? "Opslaan mislukt."); setLoading(false); return; }
-    router.push("/admin/products"); router.refresh();
+    if (initial) { router.refresh(); } else { router.push(`/admin/products/${data.id}`); }
   }
   async function removeProduct() {
     if (!initial || !confirm("Product definitief verwijderen?")) return;
@@ -40,8 +42,8 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
   return <form onSubmit={submit} className="form-stack">
     <div className="form-grid"><label>Productnaam<input className="input" name="name" required defaultValue={initial?.name ?? ""} /></label><label>Categorie<select className="input" name="categoryId" defaultValue={initial?.categoryId ?? ""}><option value="">Geen categorie</option>{categories.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label></div>
     <label>Beschrijving<textarea className="input textarea" name="description" rows={4} defaultValue={initial?.description ?? ""} /></label>
-    <label>Productfoto URL <span className="muted small">(tijdelijk; upload via Supabase Storage komt later)</span><input className="input" name="imageUrl" type="url" placeholder="https://..." defaultValue={initial?.imageUrl ?? ""} /></label>
     <label className="check"><input type="checkbox" name="active" defaultChecked={initial?.active ?? true} /> Product zichtbaar/actief</label>
+    {initial ? <ProductImageManager productId={initial.id} initialImages={initial.images} /> : <div className="upload-after-save"><strong>Productfoto&apos;s</strong><p className="muted">Sla het product eerst op. Daarna opent automatisch de productpagina en kun je één of meerdere foto&apos;s uploaden.</p></div>}
     <div className="section-title"><div><h2>Varianten</h2><p className="muted">Elke verkoopbare variant heeft een eigen SKU, barcode, prijs en BTW-tarief.</p></div><button className="btn secondary" type="button" onClick={() => setVariants(v => [...v, emptyVariant()])}>+ Variant</button></div>
     <div className="variants">{variants.map((v, i) => <div className="variant-card" key={i}>
       <div className="variant-head"><strong>Variant {i + 1}</strong><button type="button" className="text-btn danger" onClick={() => removeVariant(i)}>Verwijderen</button></div>

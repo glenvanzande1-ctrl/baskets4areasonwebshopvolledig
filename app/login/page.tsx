@@ -19,7 +19,7 @@ export default function LoginPage() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email: form.get("email"), password: form.get("password") }),
     });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({ error: "De server gaf geen geldig antwoord." }));
     if (!response.ok) {
       setError(data.error ?? "Aanmelden mislukt.");
       setLoading(false);
