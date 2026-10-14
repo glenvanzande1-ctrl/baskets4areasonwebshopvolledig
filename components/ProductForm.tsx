@@ -16,6 +16,7 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
   const [variants, setVariants] = useState<Variant[]>(initial?.variants?.length ? initial.variants : [emptyVariant()]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   function updateVariant(index: number, key: keyof Variant, value: string | boolean) {
     setVariants(v => v.map((item, i) => i === index ? { ...item, [key]: value } : item));
@@ -24,14 +25,21 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
     setVariants(v => v.length === 1 ? v : v.filter((_, i) => i !== index));
   }
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault(); setLoading(true); setError("");
+    e.preventDefault(); setLoading(true); setError(""); setSuccess("");
     const form = new FormData(e.currentTarget);
     const payload = { name: form.get("name"), description: form.get("description"), categoryId: form.get("categoryId") || null, active: form.get("active") === "on", variants };
     const url = initial ? `/api/admin/products/${initial.id}` : "/api/admin/products";
     const response = await fetch(url, { method: initial ? "PUT" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) { setError(data.error ?? "Opslaan mislukt."); setLoading(false); return; }
-    if (initial) { router.refresh(); } else { router.push(`/admin/products/${data.id}`); }
+    if (initial) {
+      setSuccess("Product succesvol opgeslagen.");
+      setLoading(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      router.refresh();
+    } else {
+      router.push(`/admin/products/${data.id}?created=1`);
+    }
   }
   async function removeProduct() {
     if (!initial || !confirm("Product definitief verwijderen?")) return;
@@ -51,6 +59,7 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
       <div className="form-grid four"><label>Kleur<input className="input" value={v.color} onChange={e => updateVariant(i,"color",e.target.value)} /></label><label>Maat<input className="input" value={v.size} onChange={e => updateVariant(i,"size",e.target.value)} /></label><label>Gewicht (g)<input className="input" type="number" min="0" value={v.weightGrams} onChange={e => updateVariant(i,"weightGrams",e.target.value)} /></label><label>BTW<select className="input" value={v.taxRateId} required onChange={e => updateVariant(i,"taxRateId",e.target.value)}>{taxRates.map(t => <option value={t.id} key={t.id}>{t.name} ({t.percentage}%)</option>)}</select></label></div>
       <label className="check"><input type="checkbox" checked={v.active} onChange={e => updateVariant(i,"active",e.target.checked)} /> Variant actief</label>
     </div>)}</div>
+    {success && <p className="success-box">✓ {success}</p>}
     {error && <p className="error">{error}</p>}
     <div className="actions"><button className="btn" disabled={loading}>{loading ? "Opslaan..." : "Product opslaan"}</button>{initial && <button type="button" className="btn danger-bg" onClick={removeProduct}>Product verwijderen</button>}</div>
   </form>;
