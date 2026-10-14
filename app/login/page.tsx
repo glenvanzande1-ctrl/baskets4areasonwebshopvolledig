@@ -104,7 +104,7 @@ export default function LoginPage() {
         </main>
       }
     >
-      <LoginForma />
+      <LoginForm />
     </Suspense>
   );
 }
