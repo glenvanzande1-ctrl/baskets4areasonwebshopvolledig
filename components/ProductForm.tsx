@@ -11,8 +11,24 @@ type ProductImage = { id: string; url: string; altText: string | null; sortOrder
 type ProductInitial = { id: string; name: string; description: string | null; categoryId: string | null; active: boolean; images: ProductImage[]; variants: Variant[] };
 type DraftImage = { id: string; file: File; previewUrl: string };
 
+async function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      value => value ? resolve(value) : reject(new Error("Afbeelding optimaliseren mislukt.")),
+      "image/webp",
+      quality,
+    );
+  });
+}
+
 async function normalizeForUpload(file: File): Promise<File> {
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("Deze foto kan op dit toestel niet worden verwerkt. Kies bij voorkeur een JPG, PNG, WebP of AVIF-afbeelding.");
+  }
+
   const size = 1400;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -33,13 +49,21 @@ async function normalizeForUpload(file: File): Promise<File> {
   ctx.drawImage(bitmap, x, y, width, height);
   bitmap.close();
 
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      value => value ? resolve(value) : reject(new Error("Afbeelding optimaliseren mislukt.")),
-      "image/webp",
-      0.88,
-    );
-  });
+  // Mobiele browsers kunnen bij dezelfde foto een veel groter WebP-bestand maken
+  // dan desktopbrowsers. Verlaag de kwaliteit automatisch tot de upload veilig
+  // onder de serverless requestlimiet blijft.
+  const maxBytes = 2.4 * 1024 * 1024;
+  const qualities = [0.82, 0.76, 0.70, 0.64, 0.58, 0.52];
+  let blob: Blob | null = null;
+
+  for (const quality of qualities) {
+    blob = await canvasToWebp(canvas, quality);
+    if (blob.size <= maxBytes) break;
+  }
+
+  if (!blob || blob.size > maxBytes) {
+    throw new Error("De foto blijft te groot na optimalisatie. Kies een andere foto of maak een nieuwe foto met een lagere resolutie.");
+  }
 
   return new File(
     [blob],
@@ -205,14 +229,14 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
               ref={fileInputRef}
               className="visually-hidden"
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
               multiple
               disabled={loading}
               onChange={e => addDraftImages(e.target.files)}
             />
           </label>
         </div>
-        <p className="muted small">JPG, PNG, WebP of AVIF. Grootte en beeldverhouding mogen verschillen; elke foto wordt automatisch naar dezelfde 1400 × 1400 webshopweergave genormaliseerd.</p>
+        <p className="muted small">JPG, PNG, WebP of AVIF. Foto’s van een smartphone worden vóór de upload automatisch extra gecomprimeerd. Grootte en beeldverhouding mogen verschillen; elke foto wordt automatisch naar dezelfde 1400 × 1400 webshopweergave genormaliseerd.</p>
 
         {draftImages.length === 0 ? (
           <div className="empty-state">Nog geen foto&apos;s geselecteerd. Je kunt het product ook zonder foto opslaan.</div>
