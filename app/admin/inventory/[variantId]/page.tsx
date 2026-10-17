@@ -30,8 +30,8 @@ export default async function InventoryDetail({ params }: { params: Promise<{ va
     <MinimumStockForm variantId={variant.id} locationId={location.id} minStock={stock.minStock} />
 
     <div className="section-title"><div><h2>Mutatiehistoriek</h2><p className="muted">Laatste 50 wijzigingen voor {location.name}.</p></div></div>
-    <div className="table-wrap"><table><thead><tr><th>Datum</th><th>Type</th><th>Wijziging</th><th>Voorraad na</th><th>Notitie</th><th>Gebruiker</th></tr></thead><tbody>
-      {movements.length === 0 ? <tr><td colSpan={6} className="muted">Nog geen voorraadmutaties.</td></tr> : movements.map(m => <tr key={m.id}><td>{new Intl.DateTimeFormat("nl-BE", { dateStyle:"short", timeStyle:"short" }).format(m.createdAt)}</td><td>{labels[m.type] ?? m.type}</td><td className={m.quantity > 0 ? "positive" : "negative"}>{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</td><td>{m.stockAfter}</td><td>{m.note ?? "—"}</td><td>{m.user?.email ?? "Systeem"}</td></tr>)}
+    <div className="table-wrap responsive-table"><table><thead><tr><th>Datum</th><th>Type</th><th>Wijziging</th><th>Voorraad na</th><th>Notitie</th><th>Gebruiker</th></tr></thead><tbody>
+      {movements.length === 0 ? <tr><td colSpan={6} className="muted">Nog geen voorraadmutaties.</td></tr> : movements.map(m => <tr key={m.id}><td data-label="Datum">{new Intl.DateTimeFormat("nl-BE", { dateStyle:"short", timeStyle:"short" }).format(m.createdAt)}</td><td data-label="Type">{labels[m.type] ?? m.type}</td><td data-label="Wijziging" className={m.quantity > 0 ? "positive" : "negative"}>{m.quantity > 0 ? `+${m.quantity}` : m.quantity}</td><td data-label="Voorraad na">{m.stockAfter}</td><td data-label="Notitie">{m.note ?? "—"}</td><td data-label="Gebruiker">{m.user?.email ?? "Systeem"}</td></tr>)}
     </tbody></table></div>
   </section></main>;
 }

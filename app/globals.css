@@ -123,3 +123,171 @@ body{background:var(--b4a-cream);color:var(--b4a-black);}
 
 /* Fase 11 — professionalisering */
 .staff-admin{display:grid;gap:18px;margin-top:22px}.staff-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}.staff-form .btn{justify-self:start}.staff-list{display:grid}.staff-row{display:grid;grid-template-columns:minmax(220px,1fr) 150px auto auto;gap:10px;align-items:center;padding:13px 0;border-bottom:1px solid #eee6db}.staff-row:last-child{border-bottom:0}.staff-row small{display:block;color:#81776d;margin-top:4px}.compact-input{padding:9px 11px}.system-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:22px 0}.system-grid .report-box{display:flex;justify-content:space-between;gap:18px;align-items:center}.status-ok,.status-warn{font-weight:800;font-size:.9rem}.status-ok{color:#216436}.status-warn{color:#9a5a00}.check-list{display:grid;gap:10px;padding-left:22px;color:#5f5952}.check-list code{background:#f4eee6;padding:2px 5px;border-radius:5px}@media(max-width:850px){.staff-form{grid-template-columns:1fr}.staff-row{grid-template-columns:1fr 1fr}.system-grid{grid-template-columns:1fr}}@media(max-width:560px){.staff-row{grid-template-columns:1fr}}
+
+/* Fase 13 — volledige responsive desktop/mobile polish */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+.admin-card, .card, .pos-panel, .report-box, .variant-card, .tile { min-width: 0; }
+.admin-card *, .card *, .pos-panel *, .report-box * { overflow-wrap: anywhere; }
+
+/* Desktop/tablet: brede beheerkaarten blijven leesbaar zonder onnodige scroll */
+.responsive-table { overflow: visible; }
+.responsive-table table { table-layout: auto; }
+.responsive-table td, .responsive-table th { word-break: normal; overflow-wrap: anywhere; }
+
+@media (max-width: 980px) {
+  .admin-shell { padding: 20px; }
+  .admin-card { padding: 24px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar { flex-wrap: wrap; }
+  .topbar > .actions { width: 100%; }
+  .topbar > .actions .btn { flex: 1 1 220px; text-align: center; }
+  .stock-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .image-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .store-header nav { flex-wrap: wrap; justify-content: center; overflow: visible; }
+  .report-page { width: 100%; }
+}
+
+@media (max-width: 760px) {
+  body { font-size: 15px; }
+  h1 { font-size: clamp(1.7rem, 8vw, 2.25rem); line-height: 1.08; }
+  h2 { line-height: 1.15; }
+  .shell { min-height: 100vh; place-items: start center; padding: 12px; }
+  .card, .card.wide { width: 100%; padding: 18px; border-radius: 14px; }
+  .admin-shell { padding: 10px; }
+  .admin-card { width: 100%; padding: 16px; border-radius: 14px; }
+  .pos { padding: 10px; }
+  .pos-panel { padding: 14px; border-radius: 14px; }
+
+  .topbar, .section-title { gap: 12px; }
+  .topbar > div:first-child, .section-title > div:first-child { width: 100%; min-width: 0; }
+  .actions { width: 100%; gap: 8px; }
+  .actions .btn, .topbar > .btn { flex: 1 1 auto; text-align: center; }
+  .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .input { min-height: 44px; font-size: 16px; }
+  textarea.input { min-height: 110px; }
+
+  .grid { grid-template-columns: 1fr; gap: 10px; margin-top: 18px; }
+  .tile { padding: 17px; }
+  .tile strong { font-size: 1rem; }
+  .category-row { align-items: stretch; flex-direction: column; gap: 12px; }
+  .category-row .text-btn { align-self: flex-start; }
+  .stock-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .stock-cards > div { padding: 14px; }
+  .stock-cards strong { font-size: 1.35rem; }
+
+  /* Beheertabellen worden op mobiel kaarten. Geen horizontaal swipen meer. */
+  .responsive-table { overflow: visible !important; margin-top: 18px; }
+  .responsive-table table,
+  .responsive-table tbody,
+  .responsive-table tfoot,
+  .responsive-table tr,
+  .responsive-table td { display: block; width: 100%; }
+  .responsive-table thead { display: none; }
+  .responsive-table tbody { display: grid; gap: 12px; }
+  .responsive-table tbody tr,
+  .responsive-table tfoot tr {
+    border: 1px solid #e8dfd4;
+    border-radius: 14px;
+    padding: 8px 14px;
+    background: #fffdfa;
+    box-shadow: 0 5px 16px rgba(55, 40, 22, .035);
+  }
+  .responsive-table td {
+    display: grid;
+    grid-template-columns: minmax(96px, .8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee7dd;
+    text-align: left;
+  }
+  .responsive-table td:last-child { border-bottom: 0; }
+  .responsive-table td::before {
+    content: attr(data-label);
+    color: #786f64;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .045em;
+  }
+  .responsive-table td[colspan] { display: block; }
+  .responsive-table td[colspan]::before { display: none; }
+  .responsive-table tfoot { margin-top: 12px; }
+
+  .form-grid, .form-grid.three, .form-grid.four, .staff-form { grid-template-columns: 1fr !important; }
+  .inline-form { width: 100%; max-width: none; }
+  .variant-card { padding: 14px; }
+  .variant-head { gap: 12px; align-items: flex-start; }
+  .image-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .image-admin-actions { padding: 10px; }
+  .image-admin-actions > div { flex-wrap: wrap; }
+
+  .staff-row { grid-template-columns: 1fr !important; gap: 8px; padding: 16px 0; }
+  .staff-row .btn, .staff-row select { width: 100%; }
+  .system-grid { grid-template-columns: 1fr; }
+  .system-grid .report-box { align-items: flex-start; flex-direction: column; }
+  .check-list { padding-left: 18px; }
+
+  .report-kpis { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .report-kpis > div, .report-box { padding: 15px; }
+  .report-kpis strong { font-size: 1.4rem; }
+  .report-grid.two { grid-template-columns: 1fr; }
+  .ranking > div, .ranking > a { grid-template-columns: 30px minmax(0,1fr); }
+  .ranking b { grid-column: 2; justify-self: start; white-space: normal; }
+  .channel-row { flex-wrap: wrap; }
+  .bar-chart { overflow: hidden; gap: 4px; }
+  .bar-day { min-width: 0; flex: 1 1 0; }
+  .bar-day b { display: none; }
+  .bar-stack i { width: 8px; }
+
+  /* Kassa */
+  .pos-register { grid-template-columns: 1fr; gap: 14px; }
+  .pos-checkout { position: static; padding: 16px; }
+  .pos-searchbar { flex-direction: column; }
+  .pos-result { gap: 10px; flex-direction: column; }
+  .pos-line { grid-template-columns: 1fr; gap: 9px; padding: 14px 0; }
+  .pos-line > strong { justify-self: start; }
+  .pos-qty { flex-wrap: wrap; }
+  .pos-payments { grid-template-columns: 1fr 1fr; }
+  .return-line { grid-template-columns: 1fr; }
+  .receipt-page { padding: 10px; }
+  .receipt-actions { flex-wrap: wrap; }
+
+  /* Klantzijde */
+  .store-main { width: 100%; padding: 28px 14px 48px; }
+  .store-header { padding: 11px 12px 12px; }
+  .store-header nav { width: 100%; gap: 8px 14px; justify-content: center; overflow: visible; white-space: normal; }
+  .store-header nav a { padding: 7px 0; }
+  .store-logo img { max-width: 86vw; height: 58px; }
+  .hero, .bright-hero-inner { border-radius: 18px; }
+  .product-grid, .premium-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .product-info { padding: 13px; }
+  .product-info h3 { font-size: .98rem; }
+  .product-detail { grid-template-columns: 1fr; gap: 22px; }
+  .cart-row { grid-template-columns: 1fr; gap: 12px; }
+  .cart-actions { flex-wrap: wrap; }
+  .cart-total { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .checkout-actions { align-items: stretch; }
+  .checkout-actions .btn { width: 100%; }
+  .order-row { align-items: flex-start; flex-direction: column; }
+  .footer-inner { padding-left: 16px; padding-right: 16px; }
+}
+
+@media (max-width: 480px) {
+  .admin-shell { padding: 6px; }
+  .admin-card, .card, .card.wide { padding: 14px; border-radius: 12px; }
+  .brand { font-size: .9rem; }
+  .topbar .btn, .actions .btn { width: 100%; flex-basis: 100%; }
+  .stock-cards { grid-template-columns: 1fr 1fr; }
+  .inventory-summary { width: 100%; min-width: 0; }
+  .responsive-table td { grid-template-columns: 88px minmax(0, 1fr); gap: 9px; }
+  .image-admin-grid { grid-template-columns: 1fr 1fr; }
+  .report-kpis { grid-template-columns: 1fr; }
+  .mini-kpis { grid-template-columns: 1fr; }
+  .pos-payments { grid-template-columns: 1fr; }
+  .product-grid, .premium-grid { grid-template-columns: 1fr; }
+  .category-feature-grid { grid-template-columns: 1fr; }
+  .gallery-thumbs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

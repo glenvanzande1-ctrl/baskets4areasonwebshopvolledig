@@ -20,11 +20,11 @@ export default async function InventoryPage() {
 
   return <main className="admin-shell"><section className="admin-card">
     <div className="topbar"><div><a className="back" href="/admin">← Beheer</a><h1>Voorraad</h1><p className="muted">Locatie: <strong>{location.name}</strong>. Fysiek, gereserveerd en beschikbaar per variant.</p></div><div className="inventory-summary"><strong>{lowCount}</strong><span>lage voorraad</span></div></div>
-    <div className="table-wrap"><table><thead><tr><th>Product / variant</th><th>SKU</th><th>Fysiek</th><th>Gereserveerd</th><th>Beschikbaar</th><th>Minimum</th><th>Status</th><th></th></tr></thead><tbody>
+    <div className="table-wrap responsive-table"><table><thead><tr><th>Product / variant</th><th>SKU</th><th>Fysiek</th><th>Gereserveerd</th><th>Beschikbaar</th><th>Minimum</th><th>Status</th><th></th></tr></thead><tbody>
       {rows.length === 0 ? <tr><td colSpan={8} className="muted">Nog geen actieve productvarianten.</td></tr> : rows.map(({v,onHand,reserved,available,minStock}) => {
         const variant = [v.color, v.size, v.weightGrams ? `${v.weightGrams} g` : null].filter(Boolean).join(" · ") || "Standaard";
         const low = available <= minStock;
-        return <tr key={v.id}><td><strong>{v.product.name}</strong><div className="small muted">{variant}</div></td><td>{v.sku}</td><td>{onHand}</td><td>{reserved}</td><td><strong>{available}</strong></td><td>{minStock}</td><td><span className={`badge ${low ? "warn" : "ok"}`}>{low ? "Laag" : "OK"}</span></td><td><a className="link" href={`/admin/inventory/${v.id}`}>Beheren →</a></td></tr>;
+        return <tr key={v.id}><td data-label="Product / variant"><strong>{v.product.name}</strong><div className="small muted">{variant}</div></td><td data-label="SKU">{v.sku}</td><td data-label="Fysiek">{onHand}</td><td data-label="Gereserveerd">{reserved}</td><td data-label="Beschikbaar"><strong>{available}</strong></td><td data-label="Minimum">{minStock}</td><td data-label="Status"><span className={`badge ${low ? "warn" : "ok"}`}>{low ? "Laag" : "OK"}</span></td><td data-label="Actie"><a className="link" href={`/admin/inventory/${v.id}`}>Beheren →</a></td></tr>;
       })}
     </tbody></table></div>
   </section></main>;
