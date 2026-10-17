@@ -27,6 +27,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id:strin
       await tx.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_UPDATED", entityType:"Product", entityId:id, metadata:{ name:d.name } } });
     });
     revalidatePath("/admin/products");
+    revalidatePath("/admin/inventory");
     revalidatePath("/admin");
     revalidatePath("/producten");
     revalidatePath("/");
@@ -44,6 +45,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id:s
     const p = await prisma.product.delete({ where:{ id } });
     await prisma.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_DELETED", entityType:"Product", entityId:id, metadata:{ name:p.name } } });
     revalidatePath("/admin/products");
+    revalidatePath("/admin/inventory");
     revalidatePath("/admin");
     revalidatePath("/producten");
     revalidatePath("/");

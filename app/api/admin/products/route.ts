@@ -18,6 +18,7 @@ export async function POST(req: Request) {
     const product = await prisma.product.create({ data:{ name:d.name.trim(), slug, description:d.description?.trim() || null, categoryId:d.categoryId || null, active:d.active, variants:{ create:d.variants.map(v => ({ sku:v.sku.trim(), barcode:v.barcode?.trim() || null, color:v.color?.trim() || null, size:v.size?.trim() || null, weightGrams:v.weightGrams ? Number(v.weightGrams) : null, price:String(v.price), taxRateId:v.taxRateId, active:v.active })) } } });
     await prisma.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_CREATED", entityType:"Product", entityId:product.id, metadata:{ name:product.name } } });
     revalidatePath("/admin/products");
+    revalidatePath("/admin/inventory");
     revalidatePath("/admin");
     revalidatePath("/producten");
     revalidatePath("/");
