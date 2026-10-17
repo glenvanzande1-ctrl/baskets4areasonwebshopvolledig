@@ -36,3 +36,10 @@ Sommige telefoons bewaren foto’s als HEIC/HEIF. Niet elke browser kan dat form
 
 ## Fase 13 — responsive beheer en mobiel
 Zie `PHASE13.md`. Deze versie bevat de responsive desktop/mobile overhaul, met mobiele kaartweergave voor brede beheertabellen en touchvriendelijke formulieren/kassa.
+
+## Fase 14 — Billit
+
+Zie `PHASE14.md` voor automatische Billit-facturatie, OAuth-configuratie en sandbox-testen.
+
+## Fase 14.1 — Billit API key
+De Billit-koppeling gebruikt nu `BILLIT_PARTY_ID` + `BILLIT_API_KEY` in plaats van OAuth. Zie `PHASE14.1.md`.

@@ -29,6 +29,7 @@ export default async function SystemPage() {
     ["Productie-URL", productionUrl, productionUrl ? "HTTPS en niet lokaal" : "nog lokaal of niet-HTTPS"],
     ["DB serverless pool", serverlessPool, serverlessPool ? "transaction pooler + pgbouncer" : "controleer 6543 + pgbouncer=true voor Vercel"],
     ["DIRECT_URL", Boolean(process.env.DIRECT_URL), process.env.DIRECT_URL ? "migratieverbinding ingesteld" : "niet ingesteld"],
+    ["Billit configuratie", Boolean(process.env.BILLIT_API_KEY && process.env.BILLIT_PARTY_ID), process.env.BILLIT_ENV === "production" ? "productie" : "sandbox"],
   ] as const;
 
   return <main className="shell report-page">

@@ -78,6 +78,17 @@ enum DiscountType {
   FIXED
 }
 
+enum BillitSyncSource {
+  ORDER
+  POS_SALE
+}
+
+enum BillitSyncStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model User {
   id                 String              @id @default(cuid())
   email              String              @unique
@@ -523,4 +534,34 @@ model StoreSettings {
   deliveryPostalCodes   String?
   deliveryTaxPercentage Decimal  @default(21) @db.Decimal(5, 2)
   updatedAt             DateTime @updatedAt
+}
+
+model BillitConnection {
+  id                    String   @id @default("default")
+  environment           String   @default("sandbox")
+  partyId               String
+  accessTokenEncrypted  String
+  refreshTokenEncrypted String
+  accessTokenExpiresAt  DateTime
+  connectedAt           DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  lastError             String?
+}
+
+model BillitInvoiceSync {
+  id              String            @id @default(cuid())
+  sourceType      BillitSyncSource
+  sourceId        String
+  sourceNumber    String
+  status          BillitSyncStatus  @default(PENDING)
+  billitOrderId   Int?
+  billitOrderNumber String?
+  attempts        Int               @default(0)
+  lastError       String?
+  lastAttemptAt   DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([sourceType, sourceId])
+  @@index([status, updatedAt])
 }

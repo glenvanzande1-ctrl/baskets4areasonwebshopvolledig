@@ -1,6 +1,7 @@
 import { Prisma, PosPaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { variantLabel } from "@/lib/cart";
+import { syncPosSaleToBillit } from "@/lib/billit";
 
 function money(cents: number) {
   return new Prisma.Decimal((cents / 100).toFixed(2));
@@ -34,7 +35,7 @@ export async function createPosSale(input: {
     grouped.set(item.variantId, (grouped.get(item.variantId) ?? 0) + item.quantity);
   }
 
-  return prisma.$transaction(async (tx) => {
+  const sale = await prisma.$transaction(async (tx) => {
     const location = await tx.inventoryLocation.findFirst({ where: { active: true }, orderBy: [{ isDefault: "desc" }, { name: "asc" }] });
     if (!location) throw new Error("Geen actieve voorraadlocatie gevonden.");
 
@@ -108,6 +109,9 @@ export async function createPosSale(input: {
     });
     return sale;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  await syncPosSaleToBillit(sale.id).catch((error) => console.error("Billit POS sync mislukt:", error));
+  return sale;
 }
 
 export async function createPosReturn(input: {

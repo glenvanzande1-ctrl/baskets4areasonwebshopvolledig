@@ -5,6 +5,7 @@ import type { MolliePayment } from "@/lib/mollie";
 import { validateDiscount } from "@/lib/discounts";
 import { getStoreSettings, postalCodes } from "@/lib/store-settings";
 import { sendOrderPaidEmail } from "@/lib/email";
+import { syncOrderToBillit } from "@/lib/billit";
 
 function money(cents: number) { return new Prisma.Decimal((cents / 100).toFixed(2)); }
 function cents(value: unknown) { return Math.round(Number(value) * 100); }
@@ -158,6 +159,11 @@ export async function applyMollieStatus(payment: MolliePayment) {
     }
     return tx.order.findUnique({ where: { id: local.orderId } });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-  if(becamePaid && order) await sendOrderPaidEmail(order.id).catch(console.error);
+  if (becamePaid && order) {
+    await Promise.allSettled([
+      sendOrderPaidEmail(order.id),
+      syncOrderToBillit(order.id),
+    ]).then((results) => results.forEach((result) => { if (result.status === "rejected") console.error(result.reason); }));
+  }
   return order;
 }
