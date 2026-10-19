@@ -4,8 +4,6 @@ import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/admin";
 import { ensureProductImageBucket, PRODUCT_IMAGE_BUCKET } from "@/lib/supabase-storage";
 
-const MAX_UPLOAD = 4 * 1024 * 1024;
-
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await requireManager();
   if (!session) return NextResponse.json({ error: "Geen toegang." }, { status: 403 });
@@ -16,7 +14,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "Geen afbeelding ontvangen." }, { status: 400 });
-  if (file.size > MAX_UPLOAD) return NextResponse.json({ error: "Afbeelding is te groot na optimalisatie. Probeer opnieuw; mobiele foto’s worden automatisch extra gecomprimeerd." }, { status: 400 });
   if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Ongeldig afbeeldingsbestand." }, { status: 400 });
 
   try {
