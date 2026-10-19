@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type SearchResult = {
   id: string;
@@ -11,12 +11,8 @@ type SearchResult = {
   price: number;
   tax: number;
   available: number;
-  categoryId?: string | null;
-  categoryName?: string;
-  imageUrl?: string | null;
 };
 
-type Category = { id: string; name: string };
 type CartLine = SearchResult & { quantity: number };
 
 function euro(value: number) {
@@ -26,36 +22,14 @@ function euro(value: number) {
 export default function PosRegister() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [catalog, setCatalog] = useState<SearchResult[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [busy, setBusy] = useState(false);
-  const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD">("CARD");
   const [cashReceived, setCashReceived] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/pos/catalog", { cache: "no-store" });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || "Catalogus laden mislukt.");
-        setCatalog(d.products || []);
-        setCategories(d.categories || []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Catalogus laden mislukt.");
-      } finally {
-        setLoadingCatalog(false);
-        setTimeout(() => inputRef.current?.focus(), 80);
-      }
-    })();
-  }, []);
-
   const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const subtotal = total;
   const taxRows = useMemo(() => {
     const map = new Map<number, number>();
     for (const item of cart) {
@@ -65,13 +39,7 @@ export default function PosRegister() {
     }
     return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [cart]);
-  const taxTotal = taxRows.reduce((sum, [, amount]) => sum + amount, 0);
   const changeDue = paymentMethod === "CASH" ? Math.max(0, (Number(cashReceived.replace(",", ".")) || 0) - total) : 0;
-
-  const filteredCatalog = useMemo(() => {
-    if (activeCategory === "ALL") return catalog;
-    return catalog.filter((p) => p.categoryId === activeCategory);
-  }, [catalog, activeCategory]);
 
   function focusScanner() {
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -79,10 +47,6 @@ export default function PosRegister() {
 
   function addItem(item: SearchResult) {
     setError("");
-    if (item.available <= 0) {
-      setError(`${item.productName} is niet op voorraad.`);
-      return;
-    }
     setCart((current) => {
       const existing = current.find((line) => line.id === item.id);
       const nextQty = (existing?.quantity ?? 0) + 1;
@@ -102,7 +66,7 @@ export default function PosRegister() {
     const q = query.trim();
     if (!q) return;
     setError("");
-    const response = await fetch(`/api/pos/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+    const response = await fetch(`/api/pos/search?q=${encodeURIComponent(q)}`);
     const data = await response.json();
     if (!response.ok) {
       setError(data.error || "Zoeken mislukt.");
@@ -127,12 +91,6 @@ export default function PosRegister() {
       return [{ ...line, quantity: next }];
     }));
     focusScanner();
-  }
-
-  function keypad(key: string) {
-    if (key === "C") return setCashReceived("");
-    if (key === "⌫") return setCashReceived((v) => v.slice(0, -1));
-    setCashReceived((v) => `${v}${key === "." ? "," : key}`);
   }
 
   async function completeSale() {
@@ -163,105 +121,72 @@ export default function PosRegister() {
   }
 
   return (
-    <div className="pos-modern">
-      <section className="pos-product-area">
-        <form className="pos-modern-search" onSubmit={(e) => { e.preventDefault(); search(true); }}>
-          <div className="pos-scan-input-wrap">
-            <span className="pos-scan-icon">▣</span>
-            <input
-              ref={inputRef}
-              className="pos-modern-scan"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Scan barcode of zoek product…"
-              autoFocus
-              autoComplete="off"
-            />
-          </div>
-          <button className="pos-search-btn" type="button" onClick={() => search(false)}>Zoeken</button>
+    <div className="pos-register">
+      <section className="pos-left">
+        <form className="pos-searchbar" onSubmit={(e) => { e.preventDefault(); search(true); }}>
+          <input
+            ref={inputRef}
+            className="scan"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Scan barcode of zoek product…"
+            autoFocus
+            autoComplete="off"
+          />
+          <button className="btn" type="button" onClick={() => search(false)}>Zoeken</button>
         </form>
-
         {results.length > 0 && (
-          <div className="pos-modern-results">
+          <div className="pos-results">
             {results.map((item) => (
-              <button key={item.id} className="pos-modern-result" type="button" onClick={() => addItem(item)} disabled={item.available <= 0}>
-                <span><strong>{item.productName}</strong><small>{item.label} · {item.sku}</small></span>
+              <button key={item.id} className="pos-result" type="button" onClick={() => addItem(item)} disabled={item.available <= 0}>
+                <span><strong>{item.productName}</strong><small>{item.label} · {item.sku}{item.barcode ? ` · ${item.barcode}` : ""}</small></span>
                 <span><strong>{euro(item.price)}</strong><small>{item.available} beschikbaar</small></span>
               </button>
             ))}
           </div>
         )}
 
-        <div className="pos-category-strip">
-          <button type="button" className={activeCategory === "ALL" ? "active" : ""} onClick={() => setActiveCategory("ALL")}>Alle</button>
-          {categories.map((cat) => (
-            <button key={cat.id} type="button" className={activeCategory === cat.id ? "active" : ""} onClick={() => setActiveCategory(cat.id)}>{cat.name}</button>
-          ))}
-        </div>
-
-        <div className="pos-product-grid">
-          {loadingCatalog ? <div className="pos-grid-message">Producten laden…</div> : filteredCatalog.map((item) => (
-            <button key={item.id} type="button" className="pos-product-tile" onClick={() => addItem(item)} disabled={item.available <= 0}>
-              <div className="pos-product-thumb">
-                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span>{item.productName.slice(0, 1).toUpperCase()}</span>}
+        <div className="pos-cart">
+          <div className="pos-section-head"><h2>Winkelmand</h2><span>{cart.reduce((s, i) => s + i.quantity, 0)} artikel(en)</span></div>
+          {!cart.length ? <div className="empty-state">Scan een barcode of zoek een product.</div> : cart.map((line) => (
+            <div className="pos-line" key={line.id}>
+              <div><strong>{line.productName}</strong><small>{line.label} · BTW {line.tax}%</small></div>
+              <div className="pos-qty">
+                <button type="button" onClick={() => changeQty(line.id, -1)}>−</button>
+                <strong>{line.quantity}</strong>
+                <button type="button" onClick={() => changeQty(line.id, 1)}>+</button>
               </div>
-              <div className="pos-product-tile-info">
-                <strong>{item.productName}</strong>
-                <small>{item.label}</small>
-                <div><b>{euro(item.price)}</b><em className={item.available <= 3 ? "low" : ""}>{item.available} st.</em></div>
-              </div>
-            </button>
+              <strong>{euro(line.price * line.quantity)}</strong>
+              <button className="text-btn danger" type="button" onClick={() => setCart((c) => c.filter((x) => x.id !== line.id))}>Verwijder</button>
+            </div>
           ))}
-          {!loadingCatalog && !filteredCatalog.length && <div className="pos-grid-message">Geen producten in deze categorie.</div>}
         </div>
       </section>
 
-      <aside className="pos-order-panel">
-        <div className="pos-order-head">
-          <div><span>Huidige verkoop</span><strong>{cart.reduce((s, i) => s + i.quantity, 0)} artikel(en)</strong></div>
-          <button type="button" onClick={() => { setCart([]); setError(""); setCashReceived(""); focusScanner(); }} disabled={!cart.length || busy}>Wissen</button>
-        </div>
+      <aside className="pos-checkout">
+        <h2>Afrekenen</h2>
+        <div className="pos-total"><span>Totaal</span><strong>{euro(total)}</strong></div>
+        {taxRows.map(([rate, amount]) => <div className="pos-tax" key={rate}><span>BTW {rate}%</span><span>{euro(amount)}</span></div>)}
 
-        <div className="pos-order-lines">
-          {!cart.length ? <div className="pos-empty-order">Scan een barcode of tik een product aan.</div> : cart.map((line) => (
-            <div className="pos-order-line" key={line.id}>
-              <div className="pos-order-title"><strong>{line.productName}</strong><small>{line.label} · BTW {line.tax}%</small></div>
-              <div className="pos-order-line-price"><strong>{euro(line.price * line.quantity)}</strong><small>{euro(line.price)} / stuk</small></div>
-              <div className="pos-order-controls">
-                <button type="button" onClick={() => changeQty(line.id, -1)}>−</button>
-                <span>{line.quantity}</span>
-                <button type="button" onClick={() => changeQty(line.id, 1)}>+</button>
-                <button className="delete" type="button" onClick={() => setCart((c) => c.filter((x) => x.id !== line.id))}>×</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="pos-order-summary">
-          <div><span>Subtotaal</span><strong>{euro(subtotal - taxTotal)}</strong></div>
-          {taxRows.map(([rate, amount]) => <div key={rate}><span>BTW {rate}%</span><span>{euro(amount)}</span></div>)}
-          <div className="total"><span>Totaal</span><strong>{euro(total)}</strong></div>
-        </div>
-
-        <div className="pos-payment-toggle">
-          <button type="button" className={paymentMethod === "CARD" ? "active" : ""} onClick={() => setPaymentMethod("CARD")}>Kaart</button>
-          <button type="button" className={paymentMethod === "CASH" ? "active" : ""} onClick={() => setPaymentMethod("CASH")}>Cash</button>
+        <div className="pos-payments">
+          <button type="button" className={`pay-choice ${paymentMethod === "CARD" ? "active" : ""}`} onClick={() => setPaymentMethod("CARD")}>Kaart</button>
+          <button type="button" className={`pay-choice ${paymentMethod === "CASH" ? "active" : ""}`} onClick={() => setPaymentMethod("CASH")}>Cash</button>
         </div>
 
         {paymentMethod === "CASH" && (
-          <div className="pos-keypad-area">
-            <div className="pos-cash-display"><span>Ontvangen</span><strong>{cashReceived || "0,00"}</strong></div>
-            <div className="pos-keypad">
-              {["1","2","3","4","5","6","7","8","9","C","0","⌫"].map((k) => <button key={k} type="button" onClick={() => keypad(k)}>{k}</button>)}
-            </div>
-            <div className="pos-change"><span>Terug</span><strong>{euro(changeDue)}</strong></div>
+          <div className="cash-box">
+            <label>Ontvangen bedrag
+              <input className="input" inputMode="decimal" value={cashReceived} onChange={(e) => setCashReceived(e.target.value)} placeholder="0,00" />
+            </label>
+            <div className="change-row"><span>Terug te geven</span><strong>{euro(changeDue)}</strong></div>
           </div>
         )}
 
-        {error && <p className="error pos-order-error">{error}</p>}
-        <button className="pos-pay-button" type="button" disabled={busy || !cart.length || (paymentMethod === "CASH" && (Number(cashReceived.replace(",", ".")) || 0) < total)} onClick={completeSale}>
-          {busy ? "Bezig…" : `Afrekenen · ${euro(total)}`}
+        {error && <p className="error">{error}</p>}
+        <button className="btn pos-complete" type="button" disabled={busy || !cart.length || (paymentMethod === "CASH" && (Number(cashReceived.replace(",", ".")) || 0) < total)} onClick={completeSale}>
+          {busy ? "Bezig…" : `Verkoop afronden · ${euro(total)}`}
         </button>
+        <button className="btn secondary pos-clear" type="button" disabled={!cart.length || busy} onClick={() => { setCart([]); setError(""); setCashReceived(""); focusScanner(); }}>Winkelmand wissen</button>
       </aside>
     </div>
   );
