@@ -1,45 +1,31 @@
-# Fase 12.4 – mobiele productfoto upload
+# Fase 15 — Moderne fysieke winkel / kassa
 
-Deze patch maakt productfoto-uploads robuuster op smartphones.
+Deze patch maakt de kassapagina visueel vergelijkbaar met een moderne POS:
 
-## Wat is aangepast?
-
-- Mobiele foto’s worden voortaan adaptief gecomprimeerd vóór upload.
-- De foto blijft visueel 1400 × 1400 voor een uniforme webshopweergave.
-- WebP-kwaliteit wordt automatisch verlaagd wanneer een mobiele browser een te groot bestand genereert.
-- Doelgrootte vóór upload: maximaal ongeveer 2,4 MB.
-- De server accepteert tot 4 MB als extra veiligheidsmarge.
-- Geldt zowel voor foto’s bij een nieuw product als voor foto’s bij een bestaand product.
-- Duidelijkere foutmelding wanneer een browser een bepaald afbeeldingsformaat niet kan verwerken.
+- barcode scanner en handmatige zoekfunctie blijven volledig behouden;
+- producttegels met foto, prijs en beschikbare voorraad;
+- horizontale categorieknoppen;
+- product aantikken = direct in winkelmand;
+- rechts een vaste huidige-verkoopkolom;
+- aantallen met +/- wijzigen;
+- kaart/cash betaling;
+- numeriek keypad bij cash;
+- BTW-overzicht en totaal;
+- responsive voor desktop, tablet en telefoon.
 
 ## Installatie
 
-Kopieer deze mappen over je huidige project:
-
-- `components/`
-- `app/api/admin/products/[id]/images/`
-
-Geen database-migratie nodig.
-
-Daarna:
+1. Kopieer `components/PosRegister.tsx` over je bestaande bestand.
+2. Kopieer `app/api/pos/catalog/route.ts` naar dezelfde locatie in je project.
+3. Voeg de volledige inhoud van `POS15.css` onderaan `app/globals.css` toe.
+4. Draai:
 
 ```bash
 npm run build
 npm run dev
 ```
 
-Test daarna dezelfde smartphonefoto opnieuw.
+Er is geen database-migratie nodig.
 
-## Opmerking over HEIC/HEIF
-
-Sommige telefoons bewaren foto’s als HEIC/HEIF. Niet elke browser kan dat formaat direct in een canvas verwerken. De picker laat het formaat toe, maar wanneer de browser het niet kan decoderen krijg je een duidelijke melding. JPG/PNG/WebP/AVIF blijven het betrouwbaarst.
-
-## Fase 13 — responsive beheer en mobiel
-Zie `PHASE13.md`. Deze versie bevat de responsive desktop/mobile overhaul, met mobiele kaartweergave voor brede beheertabellen en touchvriendelijke formulieren/kassa.
-
-## Fase 14 — Billit
-
-Zie `PHASE14.md` voor automatische Billit-facturatie, OAuth-configuratie en sandbox-testen.
-
-## Fase 14.1 — Billit API key
-De Billit-koppeling gebruikt nu `BILLIT_PARTY_ID` + `BILLIT_API_KEY` in plaats van OAuth. Zie `PHASE14.1.md`.
+## Scanner
+De scanner blijft werken zoals voordien. Zorg dat hij USB HID/keyboard mode gebruikt en een Enter-suffix stuurt. Een scan in het zoekveld zoekt de exacte barcode en voegt de variant automatisch toe.
