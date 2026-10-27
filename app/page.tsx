@@ -34,8 +34,6 @@ export default async function StoreHome() {
       take: 8,
     }),
   ]);
-
-  const heroImage = products.find((p) => p.images[0]?.url)?.images[0]?.url;
   const bestsellers = products.slice(0, 4);
   const newest = products.slice(4, 8).length ? products.slice(4, 8) : products.slice(0, 4);
 
@@ -57,7 +55,7 @@ export default async function StoreHome() {
               </div>
             </div>
             <div className="shop-hero-visual">
-              {heroImage ? <img src={heroImage} alt="Baskets4areason geschenken" /> : <img className="shop-hero-logo-fallback" src="/baskets4areason-logo.png" alt="Baskets4areason" />}
+              <img src="/storefront-hero.png" alt="Sfeervolle cadeaus en geschenken van Baskets4areason" />
               <div className="shop-hero-circle">Meer dan<br />een cadeau<br /><strong>Een gevoel</strong><br />♡</div>
             </div>
           </div>
