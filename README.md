@@ -12,3 +12,7 @@ Nieuwe productvarianten zijn standaard **onbeperkt beschikbaar**. In productbehe
 
 ## Fase 16.2
 De homepage-hero gebruikt nu een vaste sfeervolle afbeelding (`public/storefront-hero.png`) en niet langer automatisch een productfoto uit de database.
+
+
+## Fase 16.3 — Security
+Supabase RLS + database grants zijn nu vastgelegd in `prisma/migrations/20261027213000_phase16_3_security_rls/migration.sql`. Zie `PHASE16.3.md`.
