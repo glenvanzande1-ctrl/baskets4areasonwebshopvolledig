@@ -11,6 +11,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { variantId } = await params;
     const body = bodySchema.parse(await request.json());
+    const variant = await prisma.productVariant.findUnique({ where: { id: variantId }, select: { trackInventory: true } });
+    if (!variant) return NextResponse.json({ error: "Variant niet gevonden." }, { status: 404 });
+    if (!variant.trackInventory) return NextResponse.json({ error: "Deze variant heeft onbeperkte voorraad." }, { status: 400 });
     const stock = await prisma.inventoryStock.upsert({
       where: { variantId_locationId: { variantId, locationId: body.locationId } },
       update: { minStock: body.minStock },

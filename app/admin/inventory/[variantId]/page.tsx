@@ -21,13 +21,15 @@ export default async function InventoryDetail({ params }: { params: Promise<{ va
   return <main className="admin-shell"><section className="admin-card">
     <a className="back" href="/admin/inventory">← Voorraad</a>
     <div className="topbar"><div><h1>{variant.product.name}</h1><p className="muted">{details} · SKU {variant.sku}{variant.barcode ? ` · barcode ${variant.barcode}` : ""}</p></div><span className="badge ok">BTW {variant.taxRate.percentage.toString()}%</span></div>
-    <div className="stock-cards"><div><span>Fysiek</span><strong>{stock.onHand}</strong></div><div><span>Gereserveerd</span><strong>{stock.reserved}</strong></div><div><span>Beschikbaar</span><strong>{available}</strong></div><div><span>Minimum</span><strong>{stock.minStock}</strong></div></div>
+    {variant.trackInventory ? <>
+      <div className="stock-cards"><div><span>Fysiek</span><strong>{stock.onHand}</strong></div><div><span>Gereserveerd</span><strong>{stock.reserved}</strong></div><div><span>Beschikbaar</span><strong>{available}</strong></div><div><span>Minimum</span><strong>{stock.minStock}</strong></div></div>
 
-    <div className="section-title"><div><h2>Voorraad aanpassen</h2><p className="muted">Elke wijziging wordt als aparte mutatie bewaard.</p></div></div>
-    <InventoryAdjustForm variantId={variant.id} locationId={location.id} />
+      <div className="section-title"><div><h2>Voorraad aanpassen</h2><p className="muted">Elke wijziging wordt als aparte mutatie bewaard.</p></div></div>
+      <InventoryAdjustForm variantId={variant.id} locationId={location.id} />
 
-    <div className="section-title"><div><h2>Voorraadwaarschuwing</h2><p className="muted">Een variant staat als laag wanneer beschikbaar ≤ minimum.</p></div></div>
-    <MinimumStockForm variantId={variant.id} locationId={location.id} minStock={stock.minStock} />
+      <div className="section-title"><div><h2>Voorraadwaarschuwing</h2><p className="muted">Een variant staat als laag wanneer beschikbaar ≤ minimum.</p></div></div>
+      <MinimumStockForm variantId={variant.id} locationId={location.id} minStock={stock.minStock} />
+    </> : <div className="unlimited-stock-panel"><span className="badge ok">Onbeperkte voorraad</span><h2>Deze variant blijft altijd verkoopbaar</h2><p className="muted">Er worden geen aantallen afgetrokken bij webshop- of kassaverkopen. Wil je deze variant toch tellen? Zet dan <strong>Voorraad opvolgen</strong> aan bij Producten → Wijzigen.</p></div>}
 
     <div className="section-title"><div><h2>Mutatiehistoriek</h2><p className="muted">Laatste 50 wijzigingen voor {location.name}.</p></div></div>
     <div className="table-wrap responsive-table"><table><thead><tr><th>Datum</th><th>Type</th><th>Wijziging</th><th>Voorraad na</th><th>Notitie</th><th>Gebruiker</th></tr></thead><tbody>

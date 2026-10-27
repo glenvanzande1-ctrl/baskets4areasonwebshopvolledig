@@ -13,7 +13,7 @@ export default async function AdminPage() {
     prisma.order.count(),
     prisma.posSale.count(),
   ]);
-  const lowStock = variants.filter(v => { const s = location ? v.inventoryStocks[0] : undefined; return (s?.onHand ?? 0) - (s?.reserved ?? 0) <= (s?.minStock ?? 0); }).length;
+  const lowStock = variants.filter(v => { if (!v.trackInventory) return false; const s = location ? v.inventoryStocks[0] : undefined; return (s?.onHand ?? 0) - (s?.reserved ?? 0) <= (s?.minStock ?? 0); }).length;
 
   return (
     <main className="shell">

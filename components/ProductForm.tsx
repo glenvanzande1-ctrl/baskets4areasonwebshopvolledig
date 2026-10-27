@@ -6,7 +6,7 @@ import ProductImageManager from "@/components/ProductImageManager";
 
 type TaxRate = { id: string; name: string; percentage: string };
 type Category = { id: string; name: string };
-type Variant = { id?: string; sku: string; barcode: string; color: string; size: string; weightGrams: string; price: string; taxRateId: string; active: boolean };
+type Variant = { id?: string; sku: string; barcode: string; color: string; size: string; weightGrams: string; price: string; taxRateId: string; active: boolean; trackInventory: boolean };
 type ProductImage = { id: string; url: string; altText: string | null; sortOrder: number };
 type ProductInitial = { id: string; name: string; description: string | null; categoryId: string | null; active: boolean; images: ProductImage[]; variants: Variant[] };
 type DraftImage = { id: string; file: File; previewUrl: string };
@@ -104,7 +104,7 @@ async function normalizeForUpload(file: File): Promise<File> {
 export default function ProductForm({ taxRates, categories, initial }: { taxRates: TaxRate[]; categories: Category[]; initial?: ProductInitial }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const emptyVariant = (): Variant => ({ sku: "", barcode: "", color: "", size: "", weightGrams: "", price: "", taxRateId: taxRates[0]?.id ?? "", active: true });
+  const emptyVariant = (): Variant => ({ sku: "", barcode: "", color: "", size: "", weightGrams: "", price: "", taxRateId: taxRates[0]?.id ?? "", active: true, trackInventory: false });
   const [variants, setVariants] = useState<Variant[]>(initial?.variants?.length ? initial.variants : [emptyVariant()]);
   const [draftImages, setDraftImages] = useState<DraftImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -291,7 +291,7 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
     )}
 
     <div className="section-title">
-      <div><h2>Varianten</h2><p className="muted">Elke verkoopbare variant heeft een eigen SKU, barcode, prijs en BTW-tarief.</p></div>
+      <div><h2>Varianten</h2><p className="muted">Elke verkoopbare variant heeft een eigen SKU, barcode, prijs en BTW-tarief. Voorraad is standaard onbeperkt.</p></div>
       <button className="btn secondary" type="button" disabled={loading} onClick={() => setVariants(v => [...v, emptyVariant()])}>+ Variant</button>
     </div>
 
@@ -308,7 +308,11 @@ export default function ProductForm({ taxRates, categories, initial }: { taxRate
         <label>Gewicht (g)<input className="input" type="number" min="0" value={v.weightGrams} disabled={loading} onChange={e => updateVariant(i,"weightGrams",e.target.value)} /></label>
         <label>BTW<select className="input" value={v.taxRateId} required disabled={loading} onChange={e => updateVariant(i,"taxRateId",e.target.value)}>{taxRates.map(t => <option value={t.id} key={t.id}>{t.name} ({t.percentage}%)</option>)}</select></label>
       </div>
-      <label className="check"><input type="checkbox" checked={v.active} disabled={loading} onChange={e => updateVariant(i,"active",e.target.checked)} /> Variant actief</label>
+      <div className="variant-flags">
+        <label className="check"><input type="checkbox" checked={v.active} disabled={loading} onChange={e => updateVariant(i,"active",e.target.checked)} /> Variant actief</label>
+        <label className="check inventory-toggle"><input type="checkbox" checked={v.trackInventory} disabled={loading} onChange={e => updateVariant(i,"trackInventory",e.target.checked)} /> Voorraad opvolgen</label>
+      </div>
+      <p className="muted small">{v.trackInventory ? "Voor deze variant wordt de echte voorraad bijgehouden. Zonder voorraad kan hij uitverkocht raken." : "Onbeperkte voorraad: deze variant blijft verkoopbaar zonder dat je voorraad hoeft toe te voegen."}</p>
     </div>)}</div>
 
     {error && <p className="error">{error}</p>}

@@ -43,19 +43,21 @@ export async function createPendingOrder(customerId: string, cartId: string, opt
 
     const rawLines = [] as Array<{
       variantId: string; productName: string; variantLabel: string; sku: string; barcode: string | null;
-      quantity: number; unitPriceCents: number; taxPercentage: number; grossCents: number;
+      quantity: number; unitPriceCents: number; taxPercentage: number; grossCents: number; trackInventory: boolean;
     }>;
     let subtotalCents = 0;
     for (const item of cart.items) {
       if (!item.variant.active || !item.variant.product.active) throw new Error(`${item.variant.product.name} is niet meer beschikbaar.`);
-      const stock = await tx.inventoryStock.upsert({
-        where: { variantId_locationId: { variantId: item.variantId, locationId: location.id } },
-        update: {}, create: { variantId: item.variantId, locationId: location.id },
-      });
-      if (stock.onHand - stock.reserved < item.quantity) throw new Error(`Onvoldoende voorraad voor ${item.variant.product.name}.`);
+      if (item.variant.trackInventory) {
+        const stock = await tx.inventoryStock.upsert({
+          where: { variantId_locationId: { variantId: item.variantId, locationId: location.id } },
+          update: {}, create: { variantId: item.variantId, locationId: location.id },
+        });
+        if (stock.onHand - stock.reserved < item.quantity) throw new Error(`Onvoldoende voorraad voor ${item.variant.product.name}.`);
+      }
       const unitPriceCents = cents(item.variant.price);
       const grossCents = unitPriceCents * item.quantity;
-      rawLines.push({variantId:item.variantId,productName:item.variant.product.name,variantLabel:variantLabel(item.variant),sku:item.variant.sku,barcode:item.variant.barcode,quantity:item.quantity,unitPriceCents,taxPercentage:Number(item.variant.taxRate.percentage),grossCents});
+      rawLines.push({variantId:item.variantId,productName:item.variant.product.name,variantLabel:variantLabel(item.variant),sku:item.variant.sku,barcode:item.variant.barcode,quantity:item.quantity,unitPriceCents,taxPercentage:Number(item.variant.taxRate.percentage),grossCents,trackInventory:item.variant.trackInventory});
       subtotalCents += grossCents;
     }
     if(settings.minimumOrderAmount && subtotalCents < cents(settings.minimumOrderAmount)) throw new Error(`Minimum bestelbedrag is € ${Number(settings.minimumOrderAmount).toFixed(2).replace(".",",")}.`);
@@ -104,6 +106,7 @@ export async function createPendingOrder(customerId: string, cartId: string, opt
     });
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     for (const l of lines) {
+      if (!l.trackInventory) continue;
       await tx.inventoryStock.update({where:{variantId_locationId:{variantId:l.variantId,locationId:location.id}},data:{reserved:{increment:l.quantity}}});
       await tx.inventoryReservation.create({data:{variantId:l.variantId,locationId:location.id,quantity:l.quantity,referenceType:"ORDER",referenceId:order.id,expiresAt}});
     }

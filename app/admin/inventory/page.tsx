@@ -41,7 +41,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   });
 
   const lowCount = rows.filter(
-    (r) => r.v.active && r.v.product.active && r.available <= r.minStock,
+    (r) => r.v.trackInventory && r.v.active && r.v.product.active && r.available <= r.minStock,
   ).length;
 
   return (
@@ -52,7 +52,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             <a className="back" href="/admin">← Beheer</a>
             <h1>Voorraad</h1>
             <p className="muted">
-              Locatie: <strong>{location.name}</strong>. Fysiek, gereserveerd en beschikbaar per variant.
+              Locatie: <strong>{location.name}</strong>. Varianten staan standaard op onbeperkt; alleen varianten met voorraadopvolging tonen echte aantallen.
             </p>
           </div>
           <div className="inventory-summary">
@@ -93,7 +93,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                     v.size,
                     v.weightGrams ? `${v.weightGrams} g` : null,
                   ].filter(Boolean).join(" · ") || "Standaard";
-                  const low = available <= minStock;
+                  const low = v.trackInventory && available <= minStock;
                   const inactive = !v.active || !v.product.active;
 
                   return (
@@ -103,13 +103,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                         <div className="small muted">{variant}</div>
                       </td>
                       <td data-label="SKU">{v.sku}</td>
-                      <td data-label="Fysiek">{onHand}</td>
-                      <td data-label="Gereserveerd">{reserved}</td>
-                      <td data-label="Beschikbaar"><strong>{available}</strong></td>
-                      <td data-label="Minimum">{minStock}</td>
+                      <td data-label="Fysiek">{v.trackInventory ? onHand : "—"}</td>
+                      <td data-label="Gereserveerd">{v.trackInventory ? reserved : "—"}</td>
+                      <td data-label="Beschikbaar"><strong>{v.trackInventory ? available : "Onbeperkt"}</strong></td>
+                      <td data-label="Minimum">{v.trackInventory ? minStock : "—"}</td>
                       <td data-label="Status">
                         {inactive ? (
                           <span className="badge warn">Inactief</span>
+                        ) : !v.trackInventory ? (
+                          <span className="badge ok">Onbeperkt</span>
                         ) : (
                           <span className={`badge ${low ? "warn" : "ok"}`}>{low ? "Laag" : "OK"}</span>
                         )}

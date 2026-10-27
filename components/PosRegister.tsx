@@ -11,6 +11,7 @@ type SearchResult = {
   price: number;
   tax: number;
   available: number;
+  unlimited?: boolean;
 };
 
 type CartLine = SearchResult & { quantity: number };
@@ -50,7 +51,7 @@ export default function PosRegister() {
     setCart((current) => {
       const existing = current.find((line) => line.id === item.id);
       const nextQty = (existing?.quantity ?? 0) + 1;
-      if (nextQty > item.available) {
+      if (!item.unlimited && nextQty > item.available) {
         setError(`Niet genoeg beschikbare voorraad voor ${item.productName}.`);
         return current;
       }
@@ -84,7 +85,7 @@ export default function PosRegister() {
       if (line.id !== id) return [line];
       const next = line.quantity + delta;
       if (next <= 0) return [];
-      if (next > line.available) {
+      if (!line.unlimited && next > line.available) {
         setError(`Maximaal ${line.available} beschikbaar voor ${line.productName}.`);
         return [line];
       }
@@ -138,9 +139,9 @@ export default function PosRegister() {
         {results.length > 0 && (
           <div className="pos-results">
             {results.map((item) => (
-              <button key={item.id} className="pos-result" type="button" onClick={() => addItem(item)} disabled={item.available <= 0}>
+              <button key={item.id} className="pos-result" type="button" onClick={() => addItem(item)} disabled={!item.unlimited && item.available <= 0}>
                 <span><strong>{item.productName}</strong><small>{item.label} · {item.sku}{item.barcode ? ` · ${item.barcode}` : ""}</small></span>
-                <span><strong>{euro(item.price)}</strong><small>{item.available} beschikbaar</small></span>
+                <span><strong>{euro(item.price)}</strong><small>{item.unlimited ? "Onbeperkt beschikbaar" : `${item.available} beschikbaar`}</small></span>
               </button>
             ))}
           </div>

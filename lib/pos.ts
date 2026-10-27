@@ -42,7 +42,7 @@ export async function createPosSale(input: {
     const lines: Array<{
       variantId: string; productName: string; variantLabel: string; sku: string; barcode: string | null;
       quantity: number; unitPriceCents: number; taxPercentage: number; lineTotalCents: number; netCents: number; taxCents: number;
-      stockId: string; stockAfter: number;
+      stockId: string | null; stockAfter: number | null; trackInventory: boolean;
     }> = [];
     let totalCents = 0;
     let taxTotalCents = 0;
@@ -54,22 +54,22 @@ export async function createPosSale(input: {
       });
       if (!variant || !variant.active || !variant.product.active) throw new Error("Een artikel is niet meer beschikbaar.");
 
-      const stock = await tx.inventoryStock.upsert({
+      const stock = variant.trackInventory ? await tx.inventoryStock.upsert({
         where: { variantId_locationId: { variantId, locationId: location.id } },
         update: {}, create: { variantId, locationId: location.id },
-      });
-      if (stock.onHand - stock.reserved < quantity) throw new Error(`Onvoldoende beschikbare voorraad voor ${variant.product.name}.`);
+      }) : null;
+      if (variant.trackInventory && stock && stock.onHand - stock.reserved < quantity) throw new Error(`Onvoldoende beschikbare voorraad voor ${variant.product.name}.`);
 
       const unitPriceCents = cents(variant.price);
       const lineTotalCents = unitPriceCents * quantity;
       const taxPercentage = Number(variant.taxRate.percentage);
       const taxCents = Math.round(lineTotalCents * taxPercentage / (100 + taxPercentage));
-      const stockAfter = stock.onHand - quantity;
+      const stockAfter = stock ? stock.onHand - quantity : null;
 
       lines.push({
         variantId, productName: variant.product.name, variantLabel: variantLabel(variant), sku: variant.sku,
         barcode: variant.barcode, quantity, unitPriceCents, taxPercentage, lineTotalCents,
-        netCents: lineTotalCents - taxCents, taxCents, stockId: stock.id, stockAfter,
+        netCents: lineTotalCents - taxCents, taxCents, stockId: stock?.id ?? null, stockAfter, trackInventory: variant.trackInventory,
       });
       totalCents += lineTotalCents;
       taxTotalCents += taxCents;
@@ -95,6 +95,7 @@ export async function createPosSale(input: {
     });
 
     for (const l of lines) {
+      if (!l.trackInventory || !l.stockId || l.stockAfter == null) continue;
       await tx.inventoryStock.update({ where: { id: l.stockId }, data: { onHand: l.stockAfter } });
       await tx.inventoryMovement.create({
         data: {
@@ -153,6 +154,8 @@ export async function createPosReturn(input: {
 
     for (const r of returnLines) {
       if (!r.restock || !r.variantId) continue;
+      const restockVariant = await tx.productVariant.findUnique({ where: { id: r.variantId }, select: { trackInventory: true } });
+      if (!restockVariant?.trackInventory) continue;
       const stock = await tx.inventoryStock.upsert({
         where: { variantId_locationId: { variantId: r.variantId, locationId: sale.locationId } }, update: {}, create: { variantId: r.variantId, locationId: sale.locationId },
       });

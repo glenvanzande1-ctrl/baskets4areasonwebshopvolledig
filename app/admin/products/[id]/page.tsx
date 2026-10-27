@@ -54,6 +54,7 @@ export default async function EditProductPage({
       price: v.price.toString(),
       taxRateId: v.taxRateId,
       active: v.active,
+      trackInventory: v.trackInventory,
     })),
   };
 

@@ -150,10 +150,11 @@ export async function getReport(period: ReportPeriod) {
   const totalTax = onlineTax + posTax;
   const orderCount = orders.length + posSales.length;
   const average = orderCount ? totalGross / orderCount : 0;
-  const onHandUnits = inventory.reduce((s, i) => s + Math.max(0, i.onHand), 0);
-  const reservedUnits = inventory.reduce((s, i) => s + Math.max(0, i.reserved), 0);
-  const lowStock = inventory.filter((i) => i.onHand - i.reserved <= i.minStock);
-  const retailInventoryValue = inventory.reduce((s, i) => s + Math.max(0, i.onHand) * Number(i.variant.price), 0);
+  const trackedInventory = inventory.filter((i) => i.variant.trackInventory);
+  const onHandUnits = trackedInventory.reduce((s, i) => s + Math.max(0, i.onHand), 0);
+  const reservedUnits = trackedInventory.reduce((s, i) => s + Math.max(0, i.reserved), 0);
+  const lowStock = trackedInventory.filter((i) => i.onHand - i.reserved <= i.minStock);
+  const retailInventoryValue = trackedInventory.reduce((s, i) => s + Math.max(0, i.onHand) * Number(i.variant.price), 0);
   const products = [...productMap.values()].sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue).slice(0, 10);
   const taxes = [...taxMap.values()].sort((a, b) => a.percentage - b.percentage).map((r) => ({ ...r, gross: money(r.gross), net: money(r.net), tax: money(r.tax) }));
   const daily = [...dailyMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date, online: money(v.online), pos: money(v.pos), total: money(v.online + v.pos) }));

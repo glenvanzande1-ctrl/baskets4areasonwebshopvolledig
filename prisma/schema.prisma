@@ -157,6 +157,7 @@ model ProductVariant {
   price                 Decimal                @db.Decimal(10, 2)
   taxRateId             String
   active                Boolean                @default(true)
+  trackInventory        Boolean                @default(false)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)

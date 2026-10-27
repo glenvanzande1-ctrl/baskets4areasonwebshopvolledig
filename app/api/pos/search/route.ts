@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     exact: exact?.id ?? null,
     results: ordered.map((v) => {
       const s = v.inventoryStocks[0];
-      return { id: v.id, productName: v.product.name, label: variantLabel(v), sku: v.sku, barcode: v.barcode, price: Number(v.price), tax: Number(v.taxRate.percentage), available: availableStock(s?.onHand ?? 0, s?.reserved ?? 0) };
+      return { id: v.id, productName: v.product.name, label: variantLabel(v), sku: v.sku, barcode: v.barcode, price: Number(v.price), tax: Number(v.taxRate.percentage), available: v.trackInventory ? availableStock(s?.onHand ?? 0, s?.reserved ?? 0) : 999999, unlimited: !v.trackInventory };
     }),
   });
 }

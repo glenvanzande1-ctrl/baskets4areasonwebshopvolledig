@@ -3,3 +3,8 @@
 Volledige webshop + beheer + centrale voorraad + fysieke kassa + Mollie + Billit, met vernieuwde responsive klantgerichte storefront.
 
 Zie `PHASE16.md` voor de wijzigingen en installatie.
+
+
+## Fase 16.1 — logo + voorraadmodus
+
+Nieuwe productvarianten zijn standaard **onbeperkt beschikbaar**. In productbeheer kan per variant `Voorraad opvolgen` worden aangezet voor artikelen die echt geteld moeten worden. Na de migratie worden ook bestaande varianten onbeperkt; zet tracking opnieuw aan waar nodig. Het storefront-logo staat op een donker contrastvlak voor betere leesbaarheid. Zie `PHASE16.1.md`.

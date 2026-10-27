@@ -28,6 +28,9 @@ export async function applyInventoryMovement(input: {
   }
 
   return prisma.$transaction(async (tx) => {
+    const variant = await tx.productVariant.findUnique({ where: { id: input.variantId }, select: { trackInventory: true } });
+    if (!variant) throw new Error("Variant niet gevonden.");
+    if (!variant.trackInventory) throw new Error("Deze variant heeft onbeperkte voorraad. Zet 'Voorraad opvolgen' aan in productbeheer om voorraadmutaties te gebruiken.");
     const current = await tx.inventoryStock.upsert({
       where: { variantId_locationId: { variantId: input.variantId, locationId: input.locationId } },
       update: {},
@@ -74,6 +77,9 @@ export async function reserveInventory(input: {
   if (!Number.isInteger(input.quantity) || input.quantity <= 0) throw new Error("Ongeldige reserveringshoeveelheid.");
 
   return prisma.$transaction(async (tx) => {
+    const variant = await tx.productVariant.findUnique({ where: { id: input.variantId }, select: { trackInventory: true } });
+    if (!variant) throw new Error("Variant niet gevonden.");
+    if (!variant.trackInventory) return null;
     const stock = await tx.inventoryStock.upsert({
       where: { variantId_locationId: { variantId: input.variantId, locationId: input.locationId } },
       update: {},

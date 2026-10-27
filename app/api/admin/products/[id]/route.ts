@@ -6,7 +6,7 @@ import { requireManager } from "@/lib/admin";
 import { toSlug } from "@/lib/slug";
 import { getStorageAdmin, PRODUCT_IMAGE_BUCKET } from "@/lib/supabase-storage";
 
-const variant = z.object({ id:z.string().optional(), sku:z.string().min(1), barcode:z.string().optional(), color:z.string().optional(), size:z.string().optional(), weightGrams:z.union([z.string(),z.number()]).optional(), price:z.union([z.string(),z.number()]), taxRateId:z.string().min(1), active:z.boolean() });
+const variant = z.object({ id:z.string().optional(), sku:z.string().min(1), barcode:z.string().optional(), color:z.string().optional(), size:z.string().optional(), weightGrams:z.union([z.string(),z.number()]).optional(), price:z.union([z.string(),z.number()]), taxRateId:z.string().min(1), active:z.boolean(), trackInventory:z.boolean().default(false) });
 const schema = z.object({ name:z.string().min(2), description:z.string().optional(), categoryId:z.string().nullable().optional(), active:z.boolean(), variants:z.array(variant).min(1) });
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id:string }> }) {
@@ -21,7 +21,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id:strin
       const incomingIds = d.variants.map(v => v.id).filter(Boolean) as string[];
       await tx.productVariant.deleteMany({ where:{ productId:id, id:{ notIn:incomingIds } } });
       for (const v of d.variants) {
-        const data = { sku:v.sku.trim(), barcode:v.barcode?.trim() || null, color:v.color?.trim() || null, size:v.size?.trim() || null, weightGrams:v.weightGrams ? Number(v.weightGrams) : null, price:String(v.price), taxRateId:v.taxRateId, active:v.active };
+        const data = { sku:v.sku.trim(), barcode:v.barcode?.trim() || null, color:v.color?.trim() || null, size:v.size?.trim() || null, weightGrams:v.weightGrams ? Number(v.weightGrams) : null, price:String(v.price), taxRateId:v.taxRateId, active:v.active, trackInventory:v.trackInventory };
         if (v.id) await tx.productVariant.update({ where:{ id:v.id }, data }); else await tx.productVariant.create({ data:{ ...data, productId:id } });
       }
       await tx.auditLog.create({ data:{ userId:session.userId, action:"PRODUCT_UPDATED", entityType:"Product", entityId:id, metadata:{ name:d.name } } });
